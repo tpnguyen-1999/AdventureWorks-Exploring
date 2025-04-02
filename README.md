@@ -241,16 +241,133 @@ ORDER BY 1,2;
 |3| M-0| 1918|
 |3| M-1| 43|
 
-**3.6: Trend of Stock level & MoM diff % by all product in 2011. If % growth rate is null then 0. Round to 1 decimal**
+## 4. Production Department
+**4.1: Trend of Stock level & MoM diff % by all product in 2011. If % growth rate is null then 0. Round to 1 decimal**
 - SQL code
 ~~~sql
+WITH stock AS (
+    SELECT  
+        b.Name
+        ,EXTRACT (month FROM a.ModifiedDate) AS month 
+        ,EXTRACT (year FROM a.ModifiedDate) AS year
+        ,SUM(StockedQTy) AS stock_qty
+    FROM `adventureworks2019.Production.WorkOrder` AS a
+    LEFT JOIN `adventureworks2019.Production.Product` AS b
+        USING (ProductID)
+    GROUP BY 1,2,3
+    ORDER BY 1,3,2 DESC 
+    ),
 
+    prev_stock AS (
+    SELECT 
+        *
+        ,LAG (stock_qty) OVER (PARTITION BY Name ORDER BY year, month) AS  stock_prv
+    FROM stock
+    ORDER BY 1,3,2 DESC
+    )
+SELECT 
+    *
+    ,ROUND ((stock_qty - stock_prv) / stock_prv *100 ,1) AS diff
+FROM prev_stock 
+WHERE year = 2011;
 ~~~
 - Query results
 
-**3.7: Calculate Ratio of Stock / Sales in 2011 by product name, by month. Order results by month desc, ratio desc. Round Ratio to 1 decimal**
+|Name| month| year| stock_qty| stock_prv| diff|
+|----|------|-----|----------|----------|-----|
+|BB Ball Bearing|12|2011|8475|14544|-41.7|
+|BB Ball Bearing|11|2011|14544|19175|-24.2|
+|BB Ball Bearing|10|2011|19175|8845|116.8|
+|BB Ball Bearing|9|2011|8845|9666|-8.5|
+|BB Ball Bearing|8|2011|9666|12837|-24.7|
+|BB Ball Bearing|7|2011|12837|5259|144.1|
+|BB Ball Bearing|6|2011|5259| |  |
+|Blade|12|2011|1842|3598|-48.8|
+|Blade|11|2011|3598|4670|-23.0|
+|Blade|10|2011|4670|2122|120.1|
+
+**4.2: Calculate Ratio of Stock / Sales in 2011 by product name, by month. Order results by month desc, ratio desc. Round Ratio to 1 decimal**
 - SQL code
 ~~~sql
+WITH sales_info AS(
+      SELECT 
+        extract(month from a.ModifiedDate) mth,
+        extract(year from a.ModifiedDate) yr,
+        a.ProductID,
+        b.Name,
+        sum(OrderQty) sales
+      FROM `adventureworks2019.Sales.SalesOrderDetail` a
+      LEFT JOIN `adventureworks2019.Production.Product` b on a.ProductID = b.ProductID
+      WHERE extract(year from a.ModifiedDate) = 2011
+      GROUP BY 1,2,3,4
+      ORDER BY mth desc)
 
+, stock_info AS(
+      SELECT 
+        extract(month from ModifiedDate) mth,
+        extract(year from ModifiedDate) yr,
+        ProductID,
+        sum(StockedQty) stock
+      FROM `adventureworks2019.Production.WorkOrder`
+      WHERE extract(year from ModifiedDate) = 2011
+      GROUP BY 1,2,3
+      ORDER BY mth desc)
+
+,sales_stock AS(
+      SELECT 
+        s1.mth,
+        s1.yr,
+        s1.Name,
+        s1.ProductID,
+        sales,
+        coalesce(stock,0) stock
+      FROM sales_info s1
+      LEFT JOIN stock_info s2
+        ON s1.mth = s2.mth
+        AND s1.ProductID = s2.ProductID
+      ORDER BY s1.mth desc, s1.name)
+
+SELECT
+  *,
+  round(stock/sales,1) ratio
+FROM sales_stock
+ORDER BY mth desc, ratio desc;
 ~~~
 - Query results
+
+|mth| yr| Name| ProductID| sales| stock| ratio|
+|---|---|-----|----------|------|------|------|
+|12|2011|HL Mountain Frame - Black, 48|745|1|27|27.0|
+|12|2011|HL Mountain Frame - Black, 42|743|1|26|26.0|
+|12|2011|HL Mountain Frame - Silver, 38|748|2|32|16.0|
+|12|2011|LL Road Frame - Black, 58|722|4|47|11.8|
+|12|2011|HL Mountain Frame - Black, 38|747|3|31|10.3|
+|12|2011|LL Road Frame - Red, 48|726|5|36|7.2|
+|12|2011|LL Road Frame - Black, 52|738|10|64|6.4|
+|12|2011|LL Road Frame - Red, 62|730|7|38|5.4|
+|12|2011|HL Mountain Frame - Silver, 48|741|5|27|5.4|
+|12|2011|LL Road Frame - Red, 44|725|12|53|4.4|
+|12|2011|LL Road Frame - Red, 60|729|10|43|4.3|
+
+## 5. Purchasing Department
+**No of order and value at Pending status in 2014**
+- SQL code
+~~~sql
+SELECT
+  extract(year from ModifiedDate) yr,
+  Status,
+  count(distinct PurchaseOrderID) order_cnt,
+  sum(TotalDue) value
+FROM `adventureworks2019.Purchasing.PurchaseOrderHeader`
+WHERE extract(year from ModifiedDate) = 2014
+  AND Status = 1
+GROUP BY 1,2;
+~~~
+- Query results
+
+|yr| Status| order_cnt| value|
+|--|-------|----------|------|
+|2014| 1| 224| 3873579.0123|
+
+
+
