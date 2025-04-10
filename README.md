@@ -397,3 +397,8 @@ GROUP BY 1,2;
 **Review Inventory and Order Matching**: For orders pending due to stock issues, ensure that there is a sufficient inventory on hand to fulfill these orders.\
 **Improve Supplier Communication and Lead Times**: To reduce pending orders in the future, establish clear communication channels with suppliers regarding expected lead times and stock availability. Negotiate more favorable terms for quicker deliveries or more flexible stock availability.
 
+## 6. Conclusion
+- My analysis of data from the Sales, Production, and Purchasing departments within the fictitious bicycle manufacturer, Adventure Works Cycles, using SQL on Google BigQuery, has uncovered several key insights.
+- By analyzing the dataset, I gained valuable insights into the performance of each department, enabling me to make more informed recommendations.
+- To gain deeper insights, the next step is to visualize the data using tools like Power BI, Tableau, or other similar software.
+
