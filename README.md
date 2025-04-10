@@ -1,4 +1,4 @@
-# [SQL] AdventureWorks Exploring
+# [SQL] Analyze Sales, Production, and Purchasing Performance of AdventureWorks – A Bicycle Manufacturer
 Utilizing Google BigQuery SQL to analyze data from multiple departments within a fictitious bicycle manufacturer (Adventure Works Cycles).
 
 ## 1. Introduction
